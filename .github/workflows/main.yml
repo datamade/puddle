@@ -25,30 +25,18 @@ jobs:
       id-token: 'write'  
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    env:
+      HEROKU_ORGANIZATION: ${{ secrets.HEROKU_ORG }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v0'
-        with:
-            workload_identity_provider: 'projects/1057911442537/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-            service_account: 'my-service-account@fgregg-puddle.iam.gserviceaccount.com'
-      - name: Set up Cloud Run
-        uses: google-github-actions/setup-gcloud@v0
-      - name: set longer cloud build timeout
-        run: |
-          gcloud config set builds/timeout 1800
-          gcloud config get builds/timeout
       - name: dependencies
         run: |
           pip install sqlite-utils
           pip install https://github.com/fgregg/datasette/archive/refs/heads/no_limit_csv_publish.zip
       - name: get databases
-        env:
-          UNZIP_PASSWORD: ${{ secrets.UNZIP_PASSWORD }}
-          UNZIP_PASSWORD_2022: ${{ secrets.UNZIP_PASSWORD_2022 }}
         run: |
           wget https://github.com/datamade/chicago-council-scrapers/releases/download/nightly/chicago_council.db.zip
           unzip chicago_council.db.zip
@@ -74,42 +62,33 @@ jobs:
           wget https://github.com/fgregg/cmap-legistar/releases/download/nightly/cmap.db.zip
           unzip cmap.db.zip
           rm cmap.db.zip
-          wget https://github.com/fgregg/cast-vote-record/releases/download/v1/cvr_2022_11.db.zip
-          wget https://github.com/fgregg/cast-vote-record/releases/download/v1/cvr_2024_11.db.zip
-          unzip -P "$UNZIP_PASSWORD_2022" cvr_2022_11.db.zip
-          rm cvr_2022_11.db.zip
-          unzip cvr_2024_11.db.zip
-          rm cvr_2024_11.db.zip
-      - name: Install Datasette plugins
-        run: |
-          datasette install datasette-auth-passwords datasette-auth-tokens
 
-      - name: Get hashed Datasette password
+      - name: Install heroku-builds plugin
         run: |
-          # Store hash as an environment variable
-          hash=$(echo '${{ secrets.DATASETTE_INSTANCE_PW }}' \
-              | datasette hash-password --no-confirm); \
-            echo "hash=$hash" >> $GITHUB_ENV
-      - name: Deploy to Cloudrun
+          heroku plugins:install heroku-builds
+
+      - name: Login to Heroku CLI
+        uses: akhileshns/heroku-deploy@v3.12.14
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ""
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          justlogin: true
+
+      - name: Deploy Datasette instance to Heroku
         run: |
-          gcloud config set run/region us-central1
-          gcloud config set project fgregg-puddle
-          datasette publish cloudrun *.db \
-            --memory 2Gi \
-            --cpu 1 \
-            --max-instances=2 \
-            --service puddle \
-            --extra-options="--crossdb --setting sql_time_limit_ms 100000 --cors --setting facet_time_limit_ms 500 --setting allow_facet off --setting trace_debug 1" \
-            -m metadata.yml \
-            --install=datasette-atom \
-            --install=datasette-rure \
-            --install=pysqlite3-binary \
-            --install=datasette-hashed-urls \
-            --install=datasette-block-robots \
-            --install=datasette-pretty-traces \
-            --install datasette-auth-passwords \
-            --install datasette-datatable \
-            --plugin-secret datasette-auth-passwords root_password_hash '${{ env.hash }}' \
-            --version-note=$GITHUB_RUN_NUMBER
+          datasette publish heroku *.db \
+              -n puddle-datamade \
+              -m metadata.yml \
+              --extra-options="--crossdb --setting sql_time_limit_ms 100000 --cors --setting facet_time_limit_ms 500 --setting allow_facet off --setting trace_debug 1" \
+              --extra-options="--setting sql_time_limit_ms 60000" \
+              --install=datasette-atom \
+              --install=datasette-rure \
+              --install=pysqlite3-binary \
+              --install=datasette-hashed-urls \
+              --install=datasette-block-robots \
+              --install=datasette-pretty-traces \
+              --install datasette-datatable
+      
       - name: keepalive
-        uses: gautamkrishnar/keepalive-workflow@1.1.0    
+        uses: gautamkrishnar/keepalive-workflow@1.1.0

@@ -1,6 +1,6 @@
 title: A data puddle
 description_html: |-
-  <p>Databases that are interesting to <a href="https://twitter.com/forestgregg">Forest Gregg</a>, and maybe you too.</p>
+  <p>Databases from public sources in Chicago and Illinois. Managed by <a href='https://datamade.us'>DataMade</a>.</p>
 databases:
   chicago_council:
     title: Legislative information for the Chicago City Council

@@ -36,6 +36,7 @@ jobs:
         run: |
           pip install sqlite-utils
           pip install https://github.com/fgregg/datasette/archive/refs/heads/no_limit_csv_publish.zip
+          npm install -g heroku
       - name: get databases
         run: |
           wget https://github.com/datamade/chicago-council-scrapers/releases/download/nightly/chicago_council.db.zip

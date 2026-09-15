@@ -1,5 +1,18 @@
 # puddle.datamade.us
 
+**puddle.datamade.us** is no longer active. The site was a [datasette](https://datasette.io/) instance for Chicago and Illinois data and hosted by DataMade. It was shut down due to overwhelming bot and AI scraper traffic, making hosting costs unsustainable.
+
+You can still download the data that was hosted on puddle via the nightly scrapes from their respective GitHub repositories:
+
+- Chicago City Council
+  - [scraper code](https://github.com/datamade/chicago-council-scrapers)
+  - [SQLite download](https://github.com/datamade/chicago-council-scrapers/releases/download/nightly/chicago_council.db.zip) (937mb)
+- Illinois Campaign Contributions
+  - [scraper code](https://github.com/datamade/ilcampaigncash/)
+  - [SQLite download](https://github.com/datamade/ilcampaigncash/releases/download/nightly/il_campaign_disclosure.db.zip) (459mb)
+
+---
+
 A [datasette](https://datasette.io/) instance for Chicago and Illinois data. Hosted by DataMade.
 
 Data catalog includes:
